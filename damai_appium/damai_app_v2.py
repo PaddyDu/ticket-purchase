@@ -6,6 +6,7 @@ __Description__ = "大麦app抢票自动化 - 优化版"
 __Created__ = 2025/09/13 19:27
 """
 
+import sys
 import time
 from appium import webdriver
 from appium.options.common.base import AppiumOptions
@@ -307,7 +308,10 @@ class DamaiBot:
         return False
 
 
-# 使用示例
-if __name__ == "__main__":
+def main():
     bot = DamaiBot()
-    bot.run_with_retry(max_retries=3)
+    return 0 if bot.run_with_retry(max_retries=3) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

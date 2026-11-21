@@ -161,3 +161,13 @@ def test_config_invalid_content_raises(config_path, content):
 def test_config_missing_file_raises(config_path):
     with pytest.raises(FileNotFoundError):
         config_module.Config.load_config()
+
+
+@pytest.mark.parametrize("success, expected", [(False, 1), (True, 0)])
+def test_main_exit_status(bot_module, monkeypatch, success, expected):
+    bot = Mock()
+    bot.run_with_retry.return_value = success
+    monkeypatch.setattr(bot_module, "DamaiBot", Mock(return_value=bot))
+
+    assert bot_module.main() == expected
+    bot.run_with_retry.assert_called_once_with(max_retries=3)
