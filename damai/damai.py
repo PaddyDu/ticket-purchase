@@ -10,7 +10,7 @@ import os
 import sys
 import time
 
-from concert import Concert
+from concert import Concert, LoginPageError
 from config import Config
 
 
@@ -114,13 +114,18 @@ def grab():
     except KeyboardInterrupt:
         print("\n\n⚠ 用户中断程序")
         con.finish()
+    except (LoginPageError, TimeoutError) as e:
+        print(f"\n✗ 登录失败: {e}")
+        con.finish()
+        return 1
     except Exception as e:
         print(f"\n✗ 运行出错: {e}")
         import traceback
         traceback.print_exc()
         con.finish()
+    return 0
 
 
 # exec
 if __name__ == "__main__":
-    grab()
+    sys.exit(grab())
