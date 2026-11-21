@@ -92,7 +92,7 @@ adb devices
   "date": "10.04",
   "price": "799元",
   "price_index": 1,
-  "if_commit_order": true
+  "if_commit_order": false
 }
 ```
 
@@ -106,8 +106,12 @@ adb devices
 | `city` | string | 演出城市 | `"泉州"` |
 | `date` | string | 演出日期 | `"10.04"` |
 | `price` | string | 票价描述 | `"799元"` |
-| `price_index` | number | 票价索引（从0开始） | `1` |
-| `if_commit_order` | boolean | 是否自动提交订单 | `true` |
+| `price_index` | number | 票价索引（从0开始），省略时为0 | `1` |
+| `if_commit_order` | boolean | 默认false，在订单确认页停止；真正下单需显式设为true | `false` |
+| `udid` | string | 可选，指定Android设备；省略时使用唯一连接的设备 | `"emulator-5554"` |
+| `platform_version` | string | 可选，Android系统版本；省略时由Appium检测 | `"14"` |
+
+移动端始终读取 `damai_appium/config.jsonc`（与启动目录无关），支持 `//` 和 `/* */` 注释。
 
 ### Web端配置 (config.json)
 
