@@ -6,6 +6,7 @@ __Description__ = "大麦app抢票自动化 - 优化版"
 __Created__ = 2025/09/13 19:27
 """
 
+import sys
 import time
 from appium import webdriver
 from appium.options.common.base import AppiumOptions
@@ -15,7 +16,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-from config import Config
+if __package__:
+    from .config import Config
+else:
+    from config import Config
 
 
 class DamaiBot:
@@ -23,14 +27,16 @@ class DamaiBot:
         self.config = Config.load_config()
         self.driver = None
         self.wait = None
-        self._setup_driver()
+        try:
+            self._setup_driver()
+        except Exception:
+            self._close_driver()
+            raise
 
     def _setup_driver(self):
         """初始化驱动配置"""
         capabilities = {
             "platformName": "Android",  # 操作系统
-            "platformVersion": "16",  # 系统版本
-            "deviceName": "emulator-5554",  # 设备名称
             "appPackage": "cn.damai",  # app 包名
             "appActivity": ".launcher.splash.SplashMainActivity",  # app 启动 Activity
             "unicodeKeyboard": True,  # 支持 Unicode 输入
@@ -46,6 +52,10 @@ class DamaiBot:
             "shouldTerminateApp": False,
             "adbExecTimeout": 20000,
         }
+        if self.config.udid:
+            capabilities["udid"] = self.config.udid
+        if self.config.platform_version:
+            capabilities["platformVersion"] = self.config.platform_version
 
         device_app_info = AppiumOptions()
         device_app_info.load_capabilities(capabilities)
@@ -240,13 +250,18 @@ class DamaiBot:
             self.ultra_batch_click(user_clicks)
 
             # 7. 提交订单
+            if getattr(self.config, "if_commit_order", False) is not True:
+                print("已停在订单确认页，未提交订单（if_commit_order=false）。")
+                return True
             print("提交订单...")
             submit_selectors = [
                 (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("立即提交")'),
-                (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textMatches(".*提交.*|.*确认.*")'),
-                (By.XPATH, '//*[contains(@text,"提交")]')
+                (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("提交订单")'),
+                (By.XPATH, '//*[@text="确认提交订单"]')
             ]
-            self.smart_wait_and_click(*submit_selectors[0], submit_selectors[1:])
+            if not self.smart_wait_and_click(*submit_selectors[0], submit_selectors[1:]):
+                print("未找到提交订单按钮")
+                return False
 
             end_time = time.time()
             print(f"抢票流程完成，耗时: {end_time - start_time:.2f}秒")
@@ -256,33 +271,47 @@ class DamaiBot:
             print(f"抢票过程发生错误: {e}")
             return False
         finally:
-            time.sleep(1)  # 给最后的操作一点时间
-            self.driver.quit()
+            self._close_driver()
+
+    def _close_driver(self):
+        driver, self.driver = self.driver, None
+        self.wait = None
+        if driver is not None:
+            try:
+                driver.quit()
+            except Exception as e:
+                print(f"关闭驱动失败: {e}")
 
     def run_with_retry(self, max_retries=3):
         """带重试机制的抢票"""
         for attempt in range(max_retries):
             print(f"第 {attempt + 1} 次尝试...")
-            if self.run_ticket_grabbing():
-                print("抢票成功！")
+            try:
+                if self.driver is None:
+                    self._setup_driver()
+                success = self.run_ticket_grabbing()
+            except Exception as e:
+                print(f"初始化驱动失败: {e}")
+                success = False
+            finally:
+                self._close_driver()
+            if success:
+                print("流程结束。")
                 return True
             else:
                 print(f"第 {attempt + 1} 次尝试失败")
                 if attempt < max_retries - 1:
                     print("2秒后重试...")
                     time.sleep(2)
-                    # 重新初始化驱动
-                    try:
-                        self.driver.quit()
-                    except:
-                        pass
-                    self._setup_driver()
 
         print("所有尝试均失败")
         return False
 
 
-# 使用示例
-if __name__ == "__main__":
+def main():
     bot = DamaiBot()
-    bot.run_with_retry(max_retries=3)
+    return 0 if bot.run_with_retry(max_retries=3) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
