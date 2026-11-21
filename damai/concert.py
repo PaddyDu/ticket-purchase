@@ -6,8 +6,8 @@ __Description__ = ""
 __Created__ = 2023/10/10 17:00
 """
 
-import os.path
-import pickle
+import json
+import os
 import time
 from time import sleep
 
@@ -53,8 +53,13 @@ class Concert:
             sleep(1)
         print("***扫码成功***\n")
 
-        # 将cookie写入damai_cookies.pkl文件中
-        pickle.dump(self.driver.get_cookies(), open("damai_cookies.pkl", "wb"))
+        # 将cookie写入damai_cookies.json文件中
+        cookies = self.driver.get_cookies()
+        with open("damai_cookies.json", "w", encoding="utf-8",
+                  opener=lambda path, flags: os.open(path, flags, 0o600)) as cookie_file:
+            if hasattr(os, "fchmod"):
+                os.fchmod(cookie_file.fileno(), 0o600)
+            json.dump(cookies, cookie_file)
         print("***Cookie保存成功***")
         # 读取抢票目标页面
         self.driver.get(self.config.target_url)
@@ -64,7 +69,8 @@ class Concert:
         :return: 读取cookie
         """
         try:
-            cookies = pickle.load(open("damai_cookies.pkl", "rb"))
+            with open("damai_cookies.json", encoding="utf-8") as cookie_file:
+                cookies = json.load(cookie_file)
             for cookie in cookies:
                 cookie_dict = {
                     'domain': '.damai.cn',  # 域为大麦网的才为有效cookie
@@ -84,7 +90,7 @@ class Concert:
             self.driver.get(self.config.login_url)
             print('***开始登录***\n')
         elif self.login_method == 1:
-            if not os.path.exists('damai_cookies.pkl'):
+            if not os.path.exists('damai_cookies.json'):
                 # 没有cookie就获取
                 self.set_cookie()
             else:

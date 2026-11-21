@@ -50,4 +50,4 @@ echo "   服务器地址: http://127.0.0.1:4723"
 echo "   按 Ctrl+C 停止服务器"
 echo ""
 
-appium --port 4723
+appium --address 127.0.0.1 --port 4723

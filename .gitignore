@@ -161,6 +161,7 @@ chromedriver.log
 # Application specific
 config.json
 credentials.json
+damai_cookies.json
 *.cookie
 *.pkl
 *.session
