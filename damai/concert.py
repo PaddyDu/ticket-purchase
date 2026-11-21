@@ -56,7 +56,8 @@ class Concert:
         # 将cookie写入damai_cookies.json文件中
         with open("damai_cookies.json", "w", encoding="utf-8",
                   opener=lambda path, flags: os.open(path, flags, 0o600)) as cookie_file:
-            os.fchmod(cookie_file.fileno(), 0o600)
+            if hasattr(os, "fchmod"):
+                os.fchmod(cookie_file.fileno(), 0o600)
             json.dump(self.driver.get_cookies(), cookie_file)
         print("***Cookie保存成功***")
         # 读取抢票目标页面
