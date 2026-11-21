@@ -112,6 +112,7 @@ python damai/damai.py
 | `if_commit_order` | boolean | ❌ | 是否自动提交订单 | true |
 | `max_retries` | number | ❌ | 最大重试次数 | 1000 |
 | `page_load_delay` | number | ❌ | 页面加载等待时间(秒) | 2 |
+| `login_timeout` | number | ❌ | 扫码登录最长等待时间(秒)，超时或页面报错时退出 | 300 |
 
 ### 配置示例
 

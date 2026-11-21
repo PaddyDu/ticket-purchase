@@ -84,7 +84,8 @@ def load_config():
         config['if_commit_order'],
         config.get('max_retries', 1000),
         config.get('fast_mode', True),  # 默认启用快速模式
-        config.get('page_load_delay', 2)  # 默认2秒
+        config.get('page_load_delay', 2),  # 默认2秒
+        config.get('login_timeout', 300)  # 扫码登录最长等待时间（秒）
     )
 
 
