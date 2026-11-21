@@ -54,11 +54,12 @@ class Concert:
         print("***扫码成功***\n")
 
         # 将cookie写入damai_cookies.json文件中
+        cookies = self.driver.get_cookies()
         with open("damai_cookies.json", "w", encoding="utf-8",
                   opener=lambda path, flags: os.open(path, flags, 0o600)) as cookie_file:
             if hasattr(os, "fchmod"):
                 os.fchmod(cookie_file.fileno(), 0o600)
-            json.dump(self.driver.get_cookies(), cookie_file)
+            json.dump(cookies, cookie_file)
         print("***Cookie保存成功***")
         # 读取抢票目标页面
         self.driver.get(self.config.target_url)
