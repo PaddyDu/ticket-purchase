@@ -10,6 +10,7 @@ import pytest
 
 @pytest.fixture
 def concert(monkeypatch, tmp_path):
+    import damai  # bind the package before damai/ shadows it with damai.py
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[2] / "damai"))
     from damai import concert as concert_module
 

@@ -8,12 +8,35 @@ __Created__ = 2023/10/10 17:00
 
 import json
 import os
+import re
 import time
 from time import sleep
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from check_environment import get_chromedriver_path
+
+HOME_TITLE = '大麦网-全球演出赛事官方购票平台'
+LOGGED_IN_TITLE = '大麦网-全球演出赛事官方购票平台-100%正品、先付先抢、在线选座！'
+DEFAULT_LOGIN_TIMEOUT = 300
+
+_ERROR_TITLE_RE = re.compile(r'^\s*(?:HTTP\s*)?[45]\d\d\b')
+_ERROR_TITLE_KEYWORDS = (
+    'Internal Server Error', 'Bad Gateway', 'Service Unavailable', 'Gateway Time',
+    'Access Denied', 'Forbidden', "can't be reached", 'can’t be reached', '无法访问此网站',
+)
+
+
+class LoginPageError(RuntimeError):
+    """登录页面加载失败（HTTP 错误页、浏览器网络错误页等）"""
+
+
+def is_error_page(title, url=''):
+    """判断当前页面是否为 HTTP/网络错误页"""
+    if isinstance(url, str) and url.startswith('chrome-error://'):
+        return True
+    title = title or ''
+    return bool(_ERROR_TITLE_RE.match(title)) or any(kw in title for kw in _ERROR_TITLE_KEYWORDS)
 
 
 class Concert:
@@ -46,11 +69,9 @@ class Concert:
         """
         self.driver.get(self.config.index_url)
         print("***请点击登录***\n")
-        while self.driver.title.find('大麦网-全球演出赛事官方购票平台') != -1:
-            sleep(1)
+        self._wait_for_title(lambda title: title.find(HOME_TITLE) == -1, '点击登录')
         print("***请扫码登录***\n")
-        while self.driver.title != '大麦网-全球演出赛事官方购票平台-100%正品、先付先抢、在线选座！':
-            sleep(1)
+        self._wait_for_title(lambda title: title == LOGGED_IN_TITLE, '扫码登录')
         print("***扫码成功***\n")
 
         # 将cookie写入damai_cookies.json文件中
@@ -63,6 +84,24 @@ class Concert:
         print("***Cookie保存成功***")
         # 读取抢票目标页面
         self.driver.get(self.config.target_url)
+
+    def _wait_for_title(self, condition, stage):
+        """轮询页面标题直到满足 condition；遇到错误页或超时则抛出异常，避免无限等待"""
+        timeout = getattr(self.config, 'login_timeout', DEFAULT_LOGIN_TIMEOUT)
+        deadline = time.monotonic() + timeout
+        while True:
+            title = self.driver.title
+            if is_error_page(title, self.driver.current_url):
+                raise LoginPageError(
+                    f"{stage}失败: 页面加载出错（标题: {title!r}，URL: {self.driver.current_url}），"
+                    f"请检查网络或稍后重试")
+            if condition(title):
+                return
+            if time.monotonic() >= deadline:
+                raise TimeoutError(
+                    f"{stage}超时: {timeout} 秒内未完成（当前标题: {title!r}），"
+                    f"可在 config.json 中调整 login_timeout")
+            sleep(1)
 
     def get_cookie(self):
         """

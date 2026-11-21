@@ -9,7 +9,7 @@ __Created__ = 2023/10/11 18:01
 
 class Config:
 
-    def __init__(self, index_url, login_url, target_url, users, city, dates, prices, if_listen, if_commit_order, max_retries=1000, fast_mode=True, page_load_delay=2):
+    def __init__(self, index_url, login_url, target_url, users, city, dates, prices, if_listen, if_commit_order, max_retries=1000, fast_mode=True, page_load_delay=2, login_timeout=300):
         self.index_url = index_url
         self.login_url = login_url
         self.target_url = target_url
@@ -22,3 +22,4 @@ class Config:
         self.max_retries = max_retries
         self.fast_mode = fast_mode  # 快速模式：减少等待时间和调试输出
         self.page_load_delay = page_load_delay  # 订单确认页加载等待时间（秒）
+        self.login_timeout = login_timeout  # 扫码登录最长等待时间（秒）
